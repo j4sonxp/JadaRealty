@@ -21,7 +21,7 @@ Bellomy_Calenders = [
 # -------------------- CONFIGURATION --------------------
 GITHUB_USERNAME = "j4sonxp"
 GITHUB_REPO = "JadaRealty"
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+GITHUB_TOKEN = os.getenv("GH_JADA_TOKEN")
 GITHUB_BRANCH = "main"  # Change if using a different branch
 # ------------------------------------------------------
 
