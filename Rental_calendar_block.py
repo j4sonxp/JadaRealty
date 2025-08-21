@@ -246,7 +246,7 @@ if __name__ == "__main__":
         body = "RENTAL CALENDAR BLOCK VERIFICATION\n\n" + body
         if SEND_EMAIL:
             send_email_sendgrid(
-                subject="Calender Booking Conflict Alert",
+                subject="Calendar Booking Conflict Alert",
                 body=body,
                 to_email="realtyjada@gmail.com",
                 from_email="report@wildfire.paloaltonetworks.com",
