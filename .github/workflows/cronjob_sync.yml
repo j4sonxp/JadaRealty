@@ -1,9 +1,6 @@
 name: Run ICS Sync
 
-on:
-  schedule:
-    - cron: '0 */1 * * *'  # Runs every 6 hours
-  workflow_dispatch:  # Allows manual execution
+on: []
 
 jobs:
   run-script:
