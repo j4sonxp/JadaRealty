@@ -11,7 +11,7 @@ from urllib3.exceptions import InsecureRequestWarning
 import urllib3
 
 urllib3.disable_warnings(InsecureRequestWarning)
-SEND_EMAIL = False
+SEND_EMAIL = True
 LISTINGS = {
     "airbnb_5_unit": {
         "ics_url": "https://www.airbnb.com/calendar/ical/1351763334542458685.ics?s=deaac409c66150df2ef3c9b875eb8b76",
