@@ -1,0 +1,47 @@
+name: Agoda Room Watch
+
+on:
+  schedule:
+    # ~Hourly. GitHub may delay scheduled runs under load, and the script adds
+    # its own random 0-20 min jitter before hitting Agoda (see MAX_JITTER_SECONDS).
+    - cron: '0 * * * *'
+  workflow_dispatch:  # manual runs (use this for the first webhook test)
+    inputs:
+      debug_notify:
+        description: 'Send a Discord status message every run (test the webhook)'
+        type: boolean
+        default: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Run availability check
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          MAX_JITTER_SECONDS: '1200'  # up to 20 min random delay before hitting Agoda
+          DEBUG_ALWAYS_NOTIFY: ${{ inputs.debug_notify }}
+        run: python agoda_room_watch.py
+
+      - name: Upload debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agoda-artifacts-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
