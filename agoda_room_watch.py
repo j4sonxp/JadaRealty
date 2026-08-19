@@ -241,7 +241,7 @@ def check_date(page, checkin: str, label: str) -> DateResult:
         res.detail = f"probe failed: {e}"
         return res
 
-    res.price = probe.get("price")
+    res.price = " ".join(probe["price"].split()) if probe.get("price") else None
     landed_on_property = probe.get("hasPropertyMarkers") or probe.get("onPropertyUrl")
     room_count = probe.get("roomCount", 0)
 
