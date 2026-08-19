@@ -37,7 +37,8 @@ jobs:
       - name: Run availability check
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          MAX_JITTER_SECONDS: '1200'  # up to 20 min random delay before hitting Agoda
+          # Only jitter on the scheduled hourly runs; manual runs go immediately.
+          MAX_JITTER_SECONDS: ${{ github.event_name == 'schedule' && '1200' || '0' }}
           DEBUG_ALWAYS_NOTIFY: ${{ inputs.debug_notify }}
           TEST_CHECKIN: ${{ inputs.test_checkin }}
         run: python agoda_room_watch.py
