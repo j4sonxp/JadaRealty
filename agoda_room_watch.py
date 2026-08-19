@@ -109,94 +109,80 @@ def build_url(checkin: str) -> str:
 
 # JavaScript run inside the page to extract availability for our target room.
 # Returns a plain JSON-serializable object; Python interprets it.
+#
+# Detection is per-room only (no unreliable "whole property sold out" heuristic).
+# It also returns `roomNames` -- every room name it can see on the page -- which
+# is logged so the matching can be tuned against reality if Agoda changes markup.
 PAGE_PROBE_JS = r"""
 (needle) => {
-  const bodyText = (document.body && document.body.innerText) || "";
-
-  // --- bot / block detection ---
-  const blockPatterns = [
-    /captcha/i, /verify (you are|you're) human/i, /unusual traffic/i,
-    /access denied/i, /press *& *hold/i, /are you a robot/i,
-    /px-captcha/i, /perimeterx/i, /request blocked/i
-  ];
-  const blocked = blockPatterns.some(re => re.test(bodyText))
-    || !!document.querySelector('#px-captcha, iframe[src*="captcha"]');
-
-  // --- whole-property sold out ---
-  const soldOutGlobalRe =
-    /fully booked|no rooms? (available|left)|sold ?out for (these|your) dates|not available for (your|these) dates|no availability/i;
-  const soldOutGlobal = soldOutGlobalRe.test(bodyText);
-
-  // --- try to locate the target room card(s) ---
   const norm = s => (s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
   const needleN = norm(needle);
+  const bodyText = (document.body && document.body.innerText) || "";
 
-  // Candidate room containers Agoda has used historically; fall back to a broad
-  // sweep of elements whose own text mentions the room name.
-  let candidates = Array.from(document.querySelectorAll(
-    '[data-selenium="MasterRoom"],[data-testid*="MasterRoom"],[data-selenium="masterRoom"],[id^="roomGrid"] [class*="Master"],[data-element-name="master-room"]'
-  ));
+  // --- bot / block detection (specific patterns only) ---
+  const blocked = /captcha|verify (you are|you're) human|unusual traffic|access denied|press *& *hold|are you a robot|perimeterx|request blocked/i.test(bodyText)
+    || !!document.querySelector('#px-captcha, iframe[src*="captcha"]');
 
-  const textHasNeedle = el => norm(el.innerText).includes(needleN);
-
-  if (!candidates.length) {
-    // broad fallback: smallest elements that contain the room name text
-    const all = Array.from(document.querySelectorAll('div,section,article,li'));
-    candidates = all.filter(el => textHasNeedle(el))
-      // prefer the most specific (fewest descendants) matches
-      .sort((a, b) => a.querySelectorAll('*').length - b.querySelectorAll('*').length)
-      .slice(0, 5);
-  } else {
-    candidates = candidates.filter(textHasNeedle);
+  // --- collect candidate room-name strings from the room grid ---
+  const nameSelectors = [
+    '[data-selenium="masterroom-title"]',
+    '[data-selenium="room-title"]',
+    '[data-selenium="rt-name"]',
+    '[data-element-name="room-name"]',
+    '[id^="roomGrid"] h3',
+    '[data-selenium="MasterRoom"] h3',
+    '[data-testid*="room"] h3',
+    'h3', 'h2',
+  ];
+  const nameSet = new Set();
+  const nameEls = [];
+  for (const sel of nameSelectors) {
+    document.querySelectorAll(sel).forEach(el => {
+      const t = (el.innerText || "").trim();
+      if (t && t.length <= 120) { nameSet.add(t); nameEls.push(el); }
+    });
   }
+  const roomNames = Array.from(nameSet);
 
-  const priceRe = /(US\$|USD|\$|¥|CNY)\s?[\d,]+/;
-  const soldOutLocalRe = /sold ?out|no longer available|not available|unavailable/i;
-  const bookRe = /book now|reserve|select|choose/i;
-
-  let roomFound = candidates.length > 0;
-  let bookable = false;
-  let price = null;
-  let excerpt = "";
-
-  for (const el of candidates) {
-    const t = el.innerText || "";
-    excerpt = t.slice(0, 1200);
-    const hasPrice = priceRe.test(t);
-    const hasBook = bookRe.test(t);
-    const soldLocal = soldOutLocalRe.test(t);
-    if (hasPrice) {
-      const m = t.match(priceRe);
-      if (m) price = m[0];
-    }
-    if ((hasPrice || hasBook) && !soldLocal) {
-      bookable = true;
-      break;
-    }
+  // --- locate the target room's name element, then climb to its card ---
+  let matchEl = nameEls.find(el => norm(el.innerText).includes(needleN)) || null;
+  if (!matchEl) {
+    // broad fallback: smallest element containing the room name text
+    const hits = Array.from(document.querySelectorAll('div,section,article,li,span,td'))
+      .filter(el => norm(el.innerText).includes(needleN))
+      .sort((a, b) => a.querySelectorAll('*').length - b.querySelectorAll('*').length);
+    matchEl = hits[0] || null;
   }
+  const roomFound = !!matchEl;
 
-  // If we never found the room card, capture a small slice of body for debugging.
-  if (!excerpt) excerpt = bodyText.slice(0, 1200);
+  // climb up until the element is big enough to be the whole room card
+  let card = matchEl;
+  for (let i = 0; i < 8 && card && card.parentElement; i++) {
+    if (card.querySelectorAll('*').length > 40) break;
+    card = card.parentElement;
+  }
+  const cardText = card ? (card.innerText || "") : "";
+
+  const priceRe = /(US\$|USD|\$|¥|CNY)\s?[\d,]{2,}/;
+  const soldLocalRe = /sold ?out|no longer available|not available|unavailable|no rooms? (left|available)/i;
+  const priceMatch = cardText.match(priceRe);
+  const price = priceMatch ? priceMatch[0] : null;
+  const bookable = roomFound && !!price && !soldLocalRe.test(cardText);
 
   // Did we actually land on the property page (vs. a homepage/search redirect)?
-  const propertyMarkers = [
-    '[data-selenium="hotel-header-name"]',
-    '[data-selenium="masterroom"]',
-    '[data-selenium="MasterRoom"]',
-    '[id^="roomGrid"]',
-    '[data-element-name="room-grid"]',
-    '[data-selenium="area-city"]',
-  ];
-  const hasPropertyMarkers = propertyMarkers.some(sel => document.querySelector(sel));
+  const hasPropertyMarkers = !!document.querySelector(
+    '[data-selenium="hotel-header-name"],[data-selenium="MasterRoom"],[id^="roomGrid"],[data-element-name="room-grid"]'
+  );
   const onPropertyUrl = /\/hotel\//i.test(location.href) || location.href.includes("hotelId=");
 
   return {
     blocked,
-    soldOutGlobal,
     roomFound,
     bookable,
     price,
-    excerpt,
+    roomNames,
+    roomCount: roomNames.length,
+    cardExcerpt: cardText.slice(0, 600),
     bodyLen: bodyText.length,
     finalUrl: location.href,
     title: document.title,
@@ -217,14 +203,18 @@ def check_date(page, checkin: str, label: str) -> DateResult:
         res.detail = "navigation timeout"
         return res
 
-    # Give the SPA time to render the room grid. Wait for the room name or a
-    # sold-out signal, whichever comes first; fall back to a fixed settle time.
+    # Let the SPA render, then scroll through the page to trigger lazy-loading of
+    # the room cards (Agoda only mounts room rows as they scroll into view).
     try:
-        page.wait_for_selector("text=/room|sold|unavailable|captcha/i", timeout=25_000)
+        page.wait_for_load_state("networkidle", timeout=30_000)
     except PWTimeoutError:
         pass
-    # a little extra settle + human-ish pause
-    page.wait_for_timeout(random.randint(2500, 5000))
+    _scroll_to_load_rooms(page)
+    # Wait for the specific room name to render (best case), else settle briefly.
+    try:
+        page.wait_for_selector(f"text={ROOM_NAME_NEEDLE}", timeout=10_000)
+    except PWTimeoutError:
+        page.wait_for_timeout(random.randint(2000, 4000))
 
     _save_artifacts(page, checkin)
 
@@ -237,33 +227,48 @@ def check_date(page, checkin: str, label: str) -> DateResult:
 
     res.price = probe.get("price")
     landed_on_property = probe.get("hasPropertyMarkers") or probe.get("onPropertyUrl")
+    room_count = probe.get("roomCount", 0)
 
     if probe.get("blocked"):
         res.status = "blocked"
         res.detail = "bot-check / captcha detected (inconclusive)"
+    elif not landed_on_property:
+        # Redirect to homepage/search or a bot-wall shell -> INCONCLUSIVE.
+        res.status = "blocked"
+        res.detail = (f"did not land on property page -- {probe.get('finalUrl')} "
+                      f"(title={probe.get('title')!r}, len={probe.get('bodyLen')})")
     elif probe.get("bookable"):
         res.status = "available"
         res.detail = "room found and bookable"
-    elif not landed_on_property:
-        # We never reached the property page (redirect to homepage/search, or a
-        # bot-wall shell). Treat as INCONCLUSIVE, never as "unavailable".
-        res.status = "blocked"
-        res.detail = (f"did not land on property page -- redirected to "
-                      f"{probe.get('finalUrl')} (title={probe.get('title')!r}, "
-                      f"len={probe.get('bodyLen')})")
-    elif probe.get("soldOutGlobal"):
-        res.status = "unavailable"
-        res.detail = "property sold out for these dates"
     elif probe.get("roomFound"):
         res.status = "unavailable"
-        res.detail = "room listed but not bookable (sold out)"
+        res.detail = "target room listed but not bookable (sold out)"
+    elif room_count == 0:
+        # On the property page but no room names parsed -> grid didn't load.
+        # Inconclusive, not a real "unavailable".
+        res.status = "blocked"
+        res.detail = "no rooms parsed on property page (grid did not load)"
     else:
         res.status = "unavailable"
-        res.detail = "target room not offered for these dates"
+        res.detail = f"target room not offered ({room_count} other rooms seen)"
 
-    print(f"    probe: {json.dumps({k: probe.get(k) for k in ('blocked','soldOutGlobal','roomFound','bookable','price','bodyLen','hasPropertyMarkers','onPropertyUrl','finalUrl')})}")
-    print(f"    excerpt: {probe.get('excerpt','')[:300].replace(chr(10),' | ')}")
+    print(f"    probe: {json.dumps({k: probe.get(k) for k in ('blocked','roomFound','bookable','price','roomCount','bodyLen','hasPropertyMarkers','onPropertyUrl')})}")
+    print(f"    roomNames: {probe.get('roomNames', [])}")
+    if probe.get("cardExcerpt"):
+        print(f"    cardExcerpt: {probe.get('cardExcerpt','')[:300].replace(chr(10),' | ')}")
     return res
+
+
+def _scroll_to_load_rooms(page) -> None:
+    """Scroll down the page in steps so lazy-mounted room cards render."""
+    try:
+        for _ in range(12):
+            page.mouse.wheel(0, 2500)
+            page.wait_for_timeout(random.randint(500, 900))
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(800)
+    except Exception as e:  # noqa: BLE001
+        print(f"    (scroll failed: {e})")
 
 
 def _save_artifacts(page, checkin: str) -> None:
