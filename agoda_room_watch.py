@@ -155,19 +155,33 @@ PAGE_PROBE_JS = r"""
   }
   const roomFound = !!matchEl;
 
-  // climb up until the element is big enough to be the whole room card
-  let card = matchEl;
-  for (let i = 0; i < 8 && card && card.parentElement; i++) {
-    if (card.querySelectorAll('*').length > 40) break;
-    card = card.parentElement;
-  }
-  const cardText = card ? (card.innerText || "") : "";
-
   const priceRe = /(US\$|USD|\$|¥|CNY)\s?[\d,]{2,}/;
   const soldLocalRe = /sold ?out|no longer available|not available|unavailable|no rooms? (left|available)/i;
+  const bookRe = /reserve|book now|select room/i;
+
+  // Climb up from the room name until we reach the container that holds the whole
+  // master-room block -- i.e. one that contains BOTH the name and the price (or a
+  // Reserve/Book button). The name sits in the photo/details panel; price lives in
+  // a sibling offer row, so a too-early stop misses it. Fall back to the topmost
+  // ancestor we visited if none qualifies.
+  let card = matchEl;
+  let cardText = matchEl ? (matchEl.innerText || "") : "";
+  for (let i = 0; i < 12 && card && card.parentElement; i++) {
+    const t = card.innerText || "";
+    if (norm(t).includes(needleN) && (priceRe.test(t) || bookRe.test(t))) {
+      cardText = t;
+      break;
+    }
+    cardText = t;
+    card = card.parentElement;
+  }
+
   const priceMatch = cardText.match(priceRe);
   const price = priceMatch ? priceMatch[0] : null;
-  const bookable = roomFound && !!price && !soldLocalRe.test(cardText);
+  const hasBookBtn = bookRe.test(cardText)
+    || !!(card && card.querySelector('[data-selenium="booking-button"],[data-element-name*="book"],[data-selenium*="reserve"]'));
+  const soldOut = soldLocalRe.test(cardText);
+  const bookable = roomFound && !soldOut && (!!price || hasBookBtn);
 
   // Did we actually land on the property page (vs. a homepage/search redirect)?
   const hasPropertyMarkers = !!document.querySelector(
@@ -180,6 +194,8 @@ PAGE_PROBE_JS = r"""
     roomFound,
     bookable,
     price,
+    soldOut,
+    hasBookBtn,
     roomNames,
     roomCount: roomNames.length,
     cardExcerpt: cardText.slice(0, 600),
@@ -252,7 +268,7 @@ def check_date(page, checkin: str, label: str) -> DateResult:
         res.status = "unavailable"
         res.detail = f"target room not offered ({room_count} other rooms seen)"
 
-    print(f"    probe: {json.dumps({k: probe.get(k) for k in ('blocked','roomFound','bookable','price','roomCount','bodyLen','hasPropertyMarkers','onPropertyUrl')})}")
+    print(f"    probe: {json.dumps({k: probe.get(k) for k in ('blocked','roomFound','bookable','price','soldOut','hasBookBtn','roomCount','bodyLen','hasPropertyMarkers','onPropertyUrl')})}")
     print(f"    roomNames: {probe.get('roomNames', [])}")
     if probe.get("cardExcerpt"):
         print(f"    cardExcerpt: {probe.get('cardExcerpt','')[:300].replace(chr(10),' | ')}")
