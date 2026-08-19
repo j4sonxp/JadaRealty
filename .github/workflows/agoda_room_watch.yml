@@ -11,6 +11,10 @@ on:
         description: 'Send a Discord status message every run (test the webhook)'
         type: boolean
         default: false
+      test_checkin:
+        description: 'Check ONE date instead of the targets, e.g. 2026-10-14 (to verify detection works)'
+        type: string
+        default: ''
 
 jobs:
   watch:
@@ -35,6 +39,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           MAX_JITTER_SECONDS: '1200'  # up to 20 min random delay before hitting Agoda
           DEBUG_ALWAYS_NOTIFY: ${{ inputs.debug_notify }}
+          TEST_CHECKIN: ${{ inputs.test_checkin }}
         run: python agoda_room_watch.py
 
       - name: Upload debug artifacts

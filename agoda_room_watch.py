@@ -72,7 +72,30 @@ class DateResult:
     url: str = ""
 
 
+# Real property-page URL, with {checkin} where the check-in date goes. Taken from
+# the browser address bar while viewing the hotel page; session-specific params
+# (searchrequestid, ds) were dropped as they aren't needed and go stale. Note the
+# query param is lowercase `checkin`. Override at runtime with PROPERTY_URL_TEMPLATE.
+# (The bare /hotel/{id}.html deep link does NOT work -- it redirects to the homepage.)
+DEFAULT_PROPERTY_URL_TEMPLATE = (
+    "https://www.agoda.com/chongqing-indition-high-altitude-hotel/hotel/chongqing-cn.html"
+    "?countryId=191&finalPriceView=1&isShowMobileAppPrice=false"
+    f"&cid={CID}&familyMode=false&adults={ADULTS}&children=0&rooms={ROOMS}&maxRooms=0"
+    f"&currencyCode={CURRENCY}&los={LOS}&checkin={{checkin}}"
+)
+PROPERTY_URL_TEMPLATE = (
+    os.getenv("PROPERTY_URL_TEMPLATE", "").strip() or DEFAULT_PROPERTY_URL_TEMPLATE
+)
+
+
 def build_url(checkin: str) -> str:
+    if PROPERTY_URL_TEMPLATE:
+        if "{checkin}" in PROPERTY_URL_TEMPLATE:
+            return PROPERTY_URL_TEMPLATE.format(checkin=checkin)
+        # template has a literal date query param -- swap it out
+        return re.sub(r"(checkIn=)\d{4}-\d{2}-\d{2}", rf"\g<1>{checkin}",
+                      PROPERTY_URL_TEMPLATE, flags=re.IGNORECASE)
+    # Fallback (known to redirect to homepage -- replace via template above).
     return (
         f"https://www.agoda.com/hotel/{HOTEL_ID}.html"
         f"?checkIn={checkin}"
@@ -155,6 +178,18 @@ PAGE_PROBE_JS = r"""
   // If we never found the room card, capture a small slice of body for debugging.
   if (!excerpt) excerpt = bodyText.slice(0, 1200);
 
+  // Did we actually land on the property page (vs. a homepage/search redirect)?
+  const propertyMarkers = [
+    '[data-selenium="hotel-header-name"]',
+    '[data-selenium="masterroom"]',
+    '[data-selenium="MasterRoom"]',
+    '[id^="roomGrid"]',
+    '[data-element-name="room-grid"]',
+    '[data-selenium="area-city"]',
+  ];
+  const hasPropertyMarkers = propertyMarkers.some(sel => document.querySelector(sel));
+  const onPropertyUrl = /\/hotel\//i.test(location.href) || location.href.includes("hotelId=");
+
   return {
     blocked,
     soldOutGlobal,
@@ -163,6 +198,10 @@ PAGE_PROBE_JS = r"""
     price,
     excerpt,
     bodyLen: bodyText.length,
+    finalUrl: location.href,
+    title: document.title,
+    hasPropertyMarkers,
+    onPropertyUrl,
   };
 }
 """
@@ -197,6 +236,7 @@ def check_date(page, checkin: str, label: str) -> DateResult:
         return res
 
     res.price = probe.get("price")
+    landed_on_property = probe.get("hasPropertyMarkers") or probe.get("onPropertyUrl")
 
     if probe.get("blocked"):
         res.status = "blocked"
@@ -204,20 +244,24 @@ def check_date(page, checkin: str, label: str) -> DateResult:
     elif probe.get("bookable"):
         res.status = "available"
         res.detail = "room found and bookable"
+    elif not landed_on_property:
+        # We never reached the property page (redirect to homepage/search, or a
+        # bot-wall shell). Treat as INCONCLUSIVE, never as "unavailable".
+        res.status = "blocked"
+        res.detail = (f"did not land on property page -- redirected to "
+                      f"{probe.get('finalUrl')} (title={probe.get('title')!r}, "
+                      f"len={probe.get('bodyLen')})")
     elif probe.get("soldOutGlobal"):
         res.status = "unavailable"
         res.detail = "property sold out for these dates"
     elif probe.get("roomFound"):
         res.status = "unavailable"
         res.detail = "room listed but not bookable (sold out)"
-    elif probe.get("bodyLen", 0) < 500:
-        res.status = "blocked"
-        res.detail = f"page nearly empty (len={probe.get('bodyLen')}) -- likely blocked"
     else:
         res.status = "unavailable"
         res.detail = "target room not offered for these dates"
 
-    print(f"    probe: {json.dumps({k: probe.get(k) for k in ('blocked','soldOutGlobal','roomFound','bookable','price','bodyLen')})}")
+    print(f"    probe: {json.dumps({k: probe.get(k) for k in ('blocked','soldOutGlobal','roomFound','bookable','price','bodyLen','hasPropertyMarkers','onPropertyUrl','finalUrl')})}")
     print(f"    excerpt: {probe.get('excerpt','')[:300].replace(chr(10),' | ')}")
     return res
 
@@ -261,9 +305,13 @@ USER_AGENTS = [
 
 
 def main() -> int:
-    # --- jitter so we don't hit Agoda at a predictable clock time ---
+    # Optional: check a single arbitrary date (e.g. a known-available one) to
+    # validate that detection reports AVAILABLE. Set TEST_CHECKIN=YYYY-MM-DD.
+    test_checkin = os.getenv("TEST_CHECKIN", "").strip()
+
+    # --- jitter so we don't hit Agoda at a predictable clock time (skip in test) ---
     max_jitter = int(os.getenv("MAX_JITTER_SECONDS", "0") or "0")
-    if max_jitter > 0:
+    if max_jitter > 0 and not test_checkin:
         wait = random.randint(0, max_jitter)
         print(f"Jitter: sleeping {wait}s before checking...")
         time.sleep(wait)
@@ -271,6 +319,8 @@ def main() -> int:
     webhook = os.getenv("DISCORD_WEBHOOK_URL", "")
     send_alerts = os.getenv("SEND_ALERTS", "true").lower() != "false"
     debug_notify = os.getenv("DEBUG_ALWAYS_NOTIFY", "false").lower() == "true"
+
+    stays = [(test_checkin, f"TEST {test_checkin}")] if test_checkin else TARGET_STAYS
 
     user_agent = random.choice(USER_AGENTS)
     results: List[DateResult] = []
@@ -296,7 +346,7 @@ def main() -> int:
         )
         page = context.new_page()
 
-        for checkin, label in TARGET_STAYS:
+        for checkin, label in stays:
             print(f"Checking {label} (checkIn={checkin}) ...")
             res = check_date(page, checkin, label)
             print(f"  -> {res.status.upper()}: {res.detail}"
