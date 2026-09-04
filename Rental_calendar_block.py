@@ -12,6 +12,7 @@ import urllib3
 
 urllib3.disable_warnings(InsecureRequestWarning)
 SEND_EMAIL = True
+SEND_DISCORD = True
 LISTINGS = {
     "airbnb_5_unit": {
         "ics_url": "https://www.airbnb.com/calendar/ical/1351763334542458685.ics?s=deaac409c66150df2ef3c9b875eb8b76",
@@ -207,6 +208,40 @@ def detect_conflicts(bookings: List[Booking],
     return conflicts
 
 
+def send_discord(webhook_url: str, content: str):
+    """Post a message to a Discord channel via its incoming webhook.
+
+    Discord caps a single message at 2000 chars, so long conflict lists are
+    split across multiple posts.
+    """
+    if not webhook_url:
+        print("⚠️  No DISCORD_WEBHOOK_URL set -- skipping Discord notification.")
+        return
+
+    chunks = []
+    remaining = content
+    while remaining:
+        if len(remaining) <= 2000:
+            chunks.append(remaining)
+            break
+        # split on the last newline within the limit so we don't cut a line
+        cut = remaining.rfind("\n", 0, 2000)
+        if cut <= 0:
+            cut = 2000
+        chunks.append(remaining[:cut])
+        remaining = remaining[cut:].lstrip("\n")
+
+    for chunk in chunks:
+        try:
+            resp = requests.post(webhook_url, json={"content": chunk}, timeout=30)
+            if resp.status_code in (200, 204):
+                print("✅ Discord notification sent.")
+            else:
+                print(f"❌ Discord returned {resp.status_code}: {resp.text[:200]}")
+        except Exception as e:
+            print(f"❌ Failed to send Discord notification: {e}")
+
+
 def send_email_sendgrid(subject: str, body: str, to_email: str, from_email: str, api_key: str):
     message = Mail(
         from_email=from_email,
@@ -237,12 +272,11 @@ if __name__ == "__main__":
         conflicts = conflicts + (detect_conflicts(reservations, k, v['shared_units']))
 
     if conflicts:
+        discord_lines = []
         for c in conflicts:
             print(f"{c['reason']}")
-            body_lines = []
-            listing_url = LISTINGS[c['unit']]['calendar_url']
-            body_lines.append(f"{c['reason']}:\nCalendar: {listing_url}\n\n")
-            body = body + "\n\n".join(body_lines)
+            body = body + f"{c['reason']}\n\n"
+            discord_lines.append(f"- {c['reason']}")
         body = "RENTAL CALENDAR BLOCK VERIFICATION\n\n" + body
         if SEND_EMAIL:
             send_email_sendgrid(
@@ -252,6 +286,12 @@ if __name__ == "__main__":
                 from_email="report@wildfire.paloaltonetworks.com",
                 api_key=os.getenv("SENDGRID_APIKEY")
             )
+        if SEND_DISCORD:
+            discord_body = (
+                "@here 📅 **RENTAL CALENDAR BLOCK VERIFICATION**\n\n"
+                + "\n".join(discord_lines)
+            )
+            send_discord(os.getenv("DISCORD_WEBHOOK_URL", ""), discord_body)
         print(body)
     else:
         print("No conflicts detected 🎉")
