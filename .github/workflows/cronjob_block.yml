@@ -23,4 +23,5 @@ jobs:
       - name: Run script
         env:
           SENDGRID_APIKEY: ${{ secrets.SENDGRID_APIKEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python Rental_calendar_block.py
