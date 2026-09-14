@@ -1,10 +1,12 @@
 name: Agoda Room Watch
 
 on:
-  schedule:
-    # ~Hourly. GitHub may delay scheduled runs under load, and the script adds
-    # its own random 0-20 min jitter before hitting Agoda (see MAX_JITTER_SECONDS).
-    - cron: '0 * * * *'
+  # Disabled 2026-09-14: booking window (Sept 2026) has passed. Hourly schedule
+  # turned off; re-enable the cron below if you need to watch a room again.
+  # schedule:
+  #   # ~Hourly. GitHub may delay scheduled runs under load, and the script adds
+  #   # its own random 0-20 min jitter before hitting Agoda (see MAX_JITTER_SECONDS).
+  #   - cron: '0 * * * *'
   workflow_dispatch:  # manual runs (use this for the first webhook test)
     inputs:
       debug_notify:
