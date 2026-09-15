@@ -2,6 +2,8 @@ import requests
 import icalendar
 import ssl
 import os
+import json
+import base64
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from datetime import datetime, date, timedelta
@@ -13,6 +15,18 @@ import urllib3
 urllib3.disable_warnings(InsecureRequestWarning)
 SEND_EMAIL = True
 SEND_DISCORD = True
+
+# When true, no email/Discord is sent and the state file is written locally but
+# NOT committed to GitHub. Set DRY_RUN=true to test cancellation detection
+# without pinging the channel or touching the repo. Defaults off in production.
+DRY_RUN = os.getenv("DRY_RUN", "false").strip().lower() in ("1", "true", "yes")
+
+# --- Cancellation-detection state (snapshot committed to the repo) ---
+STATE_FILE = "reservations_state.json"
+GITHUB_USERNAME = "j4sonxp"
+GITHUB_REPO = "JadaRealty"
+GITHUB_BRANCH = "main"
+GITHUB_TOKEN = os.getenv("GH_JADA_TOKEN")
 LISTINGS = {
     "airbnb_5_unit": {
         "ics_url": "https://www.airbnb.com/calendar/ical/1351763334542458685.ics?s=deaac409c66150df2ef3c9b875eb8b76",
@@ -258,7 +272,104 @@ def send_email_sendgrid(subject: str, body: str, to_email: str, from_email: str,
         print(f"❌ Failed to send email: {e}")
 
 
+def load_previous_state(filename: str) -> dict:
+    """Load the previously-saved reservation snapshot, or {} on the first run.
+
+    The file is committed to the repo, so a normal Actions checkout makes it
+    available locally. Missing/corrupt file => empty state (treated as first run).
+    """
+    if not os.path.exists(filename):
+        print(f"ℹ️  No previous state file ({filename}); treating this as the first run.")
+        return {}
+    try:
+        with open(filename) as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"⚠️  Could not read {filename}: {e}; treating as empty state.")
+        return {}
+
+
+def build_snapshot(bookings: List[Booking]) -> dict:
+    """Current *booked* reservations as {listing: {uid: {start, end, summary}}}.
+
+    Only 'booked' events with a UID are tracked — those are the guest
+    reservations whose disappearance means a cancellation.
+    """
+    snapshot: Dict[str, Dict[str, dict]] = {}
+    for b in bookings:
+        if b.status != "booked" or not b.uid:
+            continue
+        snapshot.setdefault(b.listing, {})[b.uid] = {
+            "start": b.start.isoformat(),
+            "end": b.end.isoformat(),
+            "summary": b.summary,
+        }
+    return snapshot
+
+
+def detect_cancellations(previous: dict, current: dict) -> List[dict]:
+    """Reservations present last run but gone now, whose stay is still upcoming.
+
+    A booking that simply passed its checkout date also 'disappears' from the
+    feed, so we only flag a missing UID when its end date is still in the
+    future — otherwise it just aged out normally.
+    """
+    today = date.today()
+    cancellations = []
+    for listing, prev_res in previous.items():
+        curr_res = current.get(listing, {})
+        for uid, info in prev_res.items():
+            if uid in curr_res:
+                continue  # still on the calendar
+            try:
+                end = date.fromisoformat(info["end"])
+            except (KeyError, ValueError):
+                continue  # missing/garbled end -> can't confirm, skip
+            if end <= today:
+                continue  # stay already over: aged out, not a cancellation
+            cancellations.append({
+                "listing": listing,
+                "start": info.get("start"),
+                "end": info.get("end"),
+                "summary": info.get("summary", ""),
+            })
+    return cancellations
+
+
+def commit_state_to_github(filename: str):
+    """Commit the snapshot file to the repo so the next run can diff against it."""
+    if not GITHUB_TOKEN:
+        print("⚠️  No GH_JADA_TOKEN set -- cannot persist state to GitHub.")
+        return
+    api_url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/{filename}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+    with open(filename, "rb") as f:
+        content = base64.b64encode(f.read()).decode("utf-8")
+    sha = requests.get(api_url, headers=headers).json().get("sha", "")
+    payload = {"message": f"Update {filename}", "content": content, "branch": GITHUB_BRANCH}
+    if sha:
+        payload["sha"] = sha
+    resp = requests.put(api_url, headers=headers, json=payload)
+    if resp.status_code in (200, 201):
+        print(f"💾 State committed to GitHub: {filename}")
+    else:
+        print(f"❌ Failed to commit state: {resp.status_code} {resp.text[:200]}")
+
+
+def save_state(filename: str, snapshot: dict):
+    """Write the fresh snapshot locally, and commit it unless this is a dry run."""
+    with open(filename, "w") as f:
+        json.dump(snapshot, f, indent=2, sort_keys=True)
+    print(f"💾 Wrote {filename} locally.")
+    if DRY_RUN:
+        print("🧪 DRY_RUN: not committing state to GitHub.")
+        return
+    commit_state_to_github(filename)
+
+
 if __name__ == "__main__":
+    if DRY_RUN:
+        print("🧪 DRY_RUN enabled: no email/Discord will be sent and state will not be committed.\n")
     reservations = fetch_all_listings(LISTINGS)
     conflicts = []
     body = ''
@@ -278,21 +389,66 @@ if __name__ == "__main__":
             body = body + f"{c['reason']}\n\n"
             discord_lines.append(f"- {c['reason']}")
         body = "RENTAL CALENDAR BLOCK VERIFICATION\n\n" + body
-        if SEND_EMAIL:
-            send_email_sendgrid(
-                subject="Calendar Booking Conflict Alert",
-                body=body,
-                to_email="realtyjada@gmail.com",
-                from_email="report@wildfire.paloaltonetworks.com",
-                api_key=os.getenv("SENDGRID_APIKEY")
-            )
-        if SEND_DISCORD:
-            discord_body = (
-                "@here 📅 **RENTAL CALENDAR BLOCK VERIFICATION**\n\n"
-                + "\n".join(discord_lines)
-            )
-            send_discord(os.getenv("DISCORD_WEBHOOK_URL", ""), discord_body)
+        discord_body = (
+            "@here 📅 **RENTAL CALENDAR BLOCK VERIFICATION**\n\n"
+            + "\n".join(discord_lines)
+        )
+        if DRY_RUN:
+            print("🧪 DRY_RUN: would send conflict alert:\n" + discord_body)
+        else:
+            if SEND_EMAIL:
+                send_email_sendgrid(
+                    subject="Calendar Booking Conflict Alert",
+                    body=body,
+                    to_email="realtyjada@gmail.com",
+                    from_email="report@wildfire.paloaltonetworks.com",
+                    api_key=os.getenv("SENDGRID_APIKEY")
+                )
+            if SEND_DISCORD:
+                send_discord(os.getenv("DISCORD_WEBHOOK_URL", ""), discord_body)
         print(body)
     else:
         print("No conflicts detected 🎉")
+
+    # ---- Cancellation detection (independent of conflict detection above) ----
+    print("=== Cancellations ===")
+    previous_state = load_previous_state(STATE_FILE)
+    current_snapshot = build_snapshot(reservations)
+
+    if not previous_state:
+        print("ℹ️  First run (empty state): seeding snapshot, skipping cancellation check.")
+    else:
+        cancellations = detect_cancellations(previous_state, current_snapshot)
+        if cancellations:
+            cancel_lines = []
+            for c in cancellations:
+                shared = LISTINGS.get(c["listing"], {}).get("shared_units", [])
+                line = f"{c['listing']} reservation {c['start']} → {c['end']} was cancelled/removed."
+                if shared:
+                    line += f" Consider unblocking those dates on: {', '.join(shared)}."
+                print(f"🔴 {line}")
+                cancel_lines.append(line)
+            discord_body = (
+                "@here 🔴 **RESERVATION CANCELLATION DETECTED**\n\n"
+                + "\n".join(f"- {l}" for l in cancel_lines)
+            )
+            email_body = "RESERVATION CANCELLATION DETECTED\n\n" + "\n\n".join(cancel_lines)
+            if DRY_RUN:
+                print("🧪 DRY_RUN: would send cancellation alert:\n" + discord_body)
+            else:
+                if SEND_EMAIL:
+                    send_email_sendgrid(
+                        subject="Reservation Cancellation Alert",
+                        body=email_body,
+                        to_email="realtyjada@gmail.com",
+                        from_email="report@wildfire.paloaltonetworks.com",
+                        api_key=os.getenv("SENDGRID_APIKEY")
+                    )
+                if SEND_DISCORD:
+                    send_discord(os.getenv("DISCORD_WEBHOOK_URL", ""), discord_body)
+        else:
+            print("No cancellations detected 🎉")
+
+    # Persist the fresh snapshot for the next run's diff.
+    save_state(STATE_FILE, current_snapshot)
 

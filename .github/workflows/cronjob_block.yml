@@ -24,4 +24,5 @@ jobs:
         env:
           SENDGRID_APIKEY: ${{ secrets.SENDGRID_APIKEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GH_JADA_TOKEN: ${{ secrets.GH_JADA_TOKEN }}
         run: python Rental_calendar_block.py
