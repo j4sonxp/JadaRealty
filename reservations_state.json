@@ -1,0 +1,110 @@
+{
+  "airbnb_7_unit": {
+    "1418fb94e984-341b7c96dc9c68dae7fabc3bc9d052f7@airbnb.com": {
+      "end": "2027-06-14",
+      "start": "2027-06-11",
+      "summary": "Reserved"
+    }
+  },
+  "airbnb_9_unit": {
+    "1418fb94e984-666f1a173baa85d931e10a9450b941e9@airbnb.com": {
+      "end": "2026-10-10",
+      "start": "2026-10-08",
+      "summary": "Reserved"
+    }
+  },
+  "airbnb_back_unit": {
+    "1418fb94e984-6fe76962bfbebf59221aaad86c82664f@airbnb.com": {
+      "end": "2027-06-14",
+      "start": "2027-06-11",
+      "summary": "Reserved"
+    }
+  },
+  "airbnb_front_unit": {
+    "1418fb94e984-3d92c0edab102ff448b55be1f1c13b7d@airbnb.com": {
+      "end": "2026-10-11",
+      "start": "2026-10-10",
+      "summary": "Reserved"
+    },
+    "1418fb94e984-583becf4d02cd8c4312b903c674d74b1@airbnb.com": {
+      "end": "2026-09-18",
+      "start": "2026-09-13",
+      "summary": "Reserved"
+    },
+    "1418fb94e984-7209e7a0ed8fd11f1754239fa31a652a@airbnb.com": {
+      "end": "2026-10-20",
+      "start": "2026-10-17",
+      "summary": "Reserved"
+    }
+  },
+  "vrbo_7_unit": {
+    "1f69dce4-2787-4ef8-b0cb-2cfd5ddf1f7a": {
+      "end": "2026-10-15",
+      "start": "2026-10-12",
+      "summary": "Reserved - Jonathan"
+    },
+    "37514d60-70d7-42f4-9e24-3aac35b5bcc9": {
+      "end": "2026-11-08",
+      "start": "2026-11-06",
+      "summary": "Reserved - Mariela"
+    },
+    "79b1dece-d3f0-4204-a2c6-4a115c17d9a3": {
+      "end": "2026-12-07",
+      "start": "2026-12-01",
+      "summary": "Reserved - Akshay"
+    },
+    "f428e315-7a29-47bc-9354-a42220243a16": {
+      "end": "2026-11-15",
+      "start": "2026-11-13",
+      "summary": "Reserved - Jennifer"
+    }
+  },
+  "vrbo_9_unit": {
+    "24ccefed-728d-4c2c-bcec-45cb32906cf9": {
+      "end": "2026-10-05",
+      "start": "2026-10-02",
+      "summary": "Reserved - David"
+    }
+  },
+  "vrbo_back_unit": {
+    "aecf0ed3-1fdc-4e0f-9165-af453a72a57d": {
+      "end": "2026-09-18",
+      "start": "2026-09-14",
+      "summary": "Reserved - John"
+    },
+    "f32087bc-e1c6-4b13-961b-60ab373bfc46": {
+      "end": "2026-09-27",
+      "start": "2026-09-23",
+      "summary": "Reserved - Hassan"
+    }
+  },
+  "vrbo_front_unit": {
+    "6dd3d9d9-2f77-4b58-99eb-65aa4b808e5b": {
+      "end": "2026-09-29",
+      "start": "2026-09-26",
+      "summary": "Reserved - Clifford"
+    },
+    "9af19533-71fe-4408-8aaa-0a72574bf6d1": {
+      "end": "2026-09-21",
+      "start": "2026-09-18",
+      "summary": "Reserved - Anthony"
+    },
+    "a938f3b1-4b37-4b51-848b-4c5c3709e205": {
+      "end": "2026-11-29",
+      "start": "2026-11-25",
+      "summary": "Reserved - Carrie"
+    },
+    "e8e196a5-9e07-4e41-97f0-45e086d569fb": {
+      "end": "2026-12-23",
+      "start": "2026-12-17",
+      "summary": "Reserved - Amy"
+    }
+  },
+  "vrbo_middle_unit": {
+    "18d0d4ba-2944-490c-9ccc-37caf11eef95": {
+      "end": "2026-09-16",
+      "start": "2026-09-10",
+      "summary": "Reserved - Sue"
+    }
+  }
+}
