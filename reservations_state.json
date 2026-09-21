@@ -60,6 +60,11 @@
       "start": "2026-11-06",
       "summary": "Reserved - Mariela"
     },
+    "d01d5dad-f4e0-439e-8abc-922ce66a7239": {
+      "end": "2026-10-26",
+      "start": "2026-10-21",
+      "summary": "Reserved - Kei"
+    },
     "f428e315-7a29-47bc-9354-a42220243a16": {
       "end": "2026-11-15",
       "start": "2026-11-13",
@@ -105,6 +110,13 @@
       "end": "2026-12-23",
       "start": "2026-12-17",
       "summary": "Reserved - Amy"
+    }
+  },
+  "vrbo_middle_unit": {
+    "63ddd306-7773-4839-96db-d3d3fd8cbb23": {
+      "end": "2026-11-28",
+      "start": "2026-11-25",
+      "summary": "Reserved - Edward"
     }
   }
 }
