@@ -4,6 +4,11 @@
       "end": "2027-06-14",
       "start": "2027-06-11",
       "summary": "Reserved"
+    },
+    "1418fb94e984-6da9225ff83f849c64919a5c3dd58e2b@airbnb.com": {
+      "end": "2027-01-04",
+      "start": "2027-01-01",
+      "summary": "Reserved"
     }
   },
   "airbnb_9_unit": {
@@ -14,14 +19,14 @@
     }
   },
   "airbnb_back_unit": {
-    "1418fb94e984-200f51545e278216de9fc713b33e7d3e@airbnb.com": {
-      "end": "2026-09-22",
-      "start": "2026-09-18",
-      "summary": "Reserved"
-    },
     "1418fb94e984-6fe76962bfbebf59221aaad86c82664f@airbnb.com": {
       "end": "2027-06-14",
       "start": "2027-06-11",
+      "summary": "Reserved"
+    },
+    "1418fb94e984-cc775e0485a3a7fb919f50fe2ce181e1@airbnb.com": {
+      "end": "2026-09-23",
+      "start": "2026-09-22",
       "summary": "Reserved"
     }
   },
@@ -41,11 +46,6 @@
     "1418fb94e984-00633358b44e3f10e4a9ff549dd97a48@airbnb.com": {
       "end": "2026-10-02",
       "start": "2026-09-22",
-      "summary": "Reserved"
-    },
-    "1418fb94e984-bd2e2ef5c5d07cad7c907ae9e816f380@airbnb.com": {
-      "end": "2026-09-22",
-      "start": "2026-09-17",
       "summary": "Reserved"
     }
   },
@@ -108,9 +108,9 @@
     }
   },
   "vrbo_middle_unit": {
-    "63ddd306-7773-4839-96db-d3d3fd8cbb23": {
+    "cbe55d2e-6dc1-438a-86e1-8275d778dd6c": {
       "end": "2026-11-28",
-      "start": "2026-11-25",
+      "start": "2026-11-24",
       "summary": "Reserved - Edward"
     }
   }
