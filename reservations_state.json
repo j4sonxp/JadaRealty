@@ -1,4 +1,11 @@
 {
+  "airbnb_6_unit": {
+    "1418fb94e984-5c368c904854a49d49d55f754ae2bb81@airbnb.com": {
+      "end": "2027-01-01",
+      "start": "2026-12-24",
+      "summary": "Reserved"
+    }
+  },
   "airbnb_7_unit": {
     "1418fb94e984-341b7c96dc9c68dae7fabc3bc9d052f7@airbnb.com": {
       "end": "2027-06-14",
