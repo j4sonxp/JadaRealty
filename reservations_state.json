@@ -26,11 +26,6 @@
       "start": "2026-10-11",
       "summary": "Reserved"
     },
-    "1418fb94e984-4591820086dc3b1b36f982b7076b44ae@airbnb.com": {
-      "end": "2026-11-20",
-      "start": "2026-10-19",
-      "summary": "Reserved"
-    },
     "1418fb94e984-6fe76962bfbebf59221aaad86c82664f@airbnb.com": {
       "end": "2027-06-14",
       "start": "2027-06-11",
@@ -38,6 +33,11 @@
     }
   },
   "airbnb_front_unit": {
+    "1418fb94e984-1c9ab30dfaaa060a32270c56d8d2b7b2@airbnb.com": {
+      "end": "2026-10-17",
+      "start": "2026-10-16",
+      "summary": "Reserved"
+    },
     "1418fb94e984-3d92c0edab102ff448b55be1f1c13b7d@airbnb.com": {
       "end": "2026-10-11",
       "start": "2026-10-10",
@@ -46,13 +46,6 @@
     "1418fb94e984-7209e7a0ed8fd11f1754239fa31a652a@airbnb.com": {
       "end": "2026-10-20",
       "start": "2026-10-17",
-      "summary": "Reserved"
-    }
-  },
-  "airbnb_middle_unit": {
-    "1418fb94e984-00633358b44e3f10e4a9ff549dd97a48@airbnb.com": {
-      "end": "2026-10-02",
-      "start": "2026-09-22",
       "summary": "Reserved"
     }
   },
@@ -107,11 +100,6 @@
       "end": "2026-12-23",
       "start": "2026-12-17",
       "summary": "Reserved - Amy"
-    },
-    "f61770a0-ba16-4067-a262-9cee185a88a8": {
-      "end": "2026-10-02",
-      "start": "2026-09-29",
-      "summary": "Reserved - Alex"
     }
   }
 }
