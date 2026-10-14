@@ -24,6 +24,11 @@
       "start": "2027-06-11",
       "summary": "Reserved"
     },
+    "1418fb94e984-71f48ebab1bd7b05d9895717e99ff756@airbnb.com": {
+      "end": "2027-01-04",
+      "start": "2027-01-01",
+      "summary": "Reserved"
+    },
     "1418fb94e984-854dde3ea2411cd8687f3a0aa37d169e@airbnb.com": {
       "end": "2026-11-27",
       "start": "2026-11-24",
@@ -49,6 +54,13 @@
     "1418fb94e984-bed2f955d622eeccc0e18a48cb88c1d6@airbnb.com": {
       "end": "2027-04-22",
       "start": "2027-04-15",
+      "summary": "Reserved"
+    }
+  },
+  "airbnb_middle_unit": {
+    "1418fb94e984-63ec664d3665a678d194740b8791e084@airbnb.com": {
+      "end": "2026-11-28",
+      "start": "2026-11-25",
       "summary": "Reserved"
     }
   },
