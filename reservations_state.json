@@ -7,6 +7,11 @@
     }
   },
   "airbnb_back_unit": {
+    "1418fb94e984-50b125809edb0173dc38a40f4d04d9c6@airbnb.com": {
+      "end": "2026-11-09",
+      "start": "2026-11-06",
+      "summary": "Reserved"
+    },
     "1418fb94e984-6fe76962bfbebf59221aaad86c82664f@airbnb.com": {
       "end": "2027-06-14",
       "start": "2027-06-11",
@@ -29,11 +34,6 @@
     }
   },
   "airbnb_front_unit": {
-    "1418fb94e984-7209e7a0ed8fd11f1754239fa31a652a@airbnb.com": {
-      "end": "2026-10-20",
-      "start": "2026-10-17",
-      "summary": "Reserved"
-    },
     "1418fb94e984-bed2f955d622eeccc0e18a48cb88c1d6@airbnb.com": {
       "end": "2027-04-22",
       "start": "2027-04-15",
@@ -81,6 +81,11 @@
       "end": "2027-04-14",
       "start": "2027-04-11",
       "summary": "Reserved - Erin"
+    },
+    "a0c62bc3-ac06-4f58-95d7-ee8476cf4ecb": {
+      "end": "2026-11-22",
+      "start": "2026-11-20",
+      "summary": "Reserved - Hugh"
     }
   },
   "vrbo_front_unit": {
