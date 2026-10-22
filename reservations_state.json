@@ -34,6 +34,11 @@
     }
   },
   "airbnb_front_unit": {
+    "1418fb94e984-bbc1ee9d24b1c71b5e672b6d93c03544@airbnb.com": {
+      "end": "2026-11-20",
+      "start": "2026-11-17",
+      "summary": "Reserved"
+    },
     "1418fb94e984-bed2f955d622eeccc0e18a48cb88c1d6@airbnb.com": {
       "end": "2027-04-22",
       "start": "2027-04-15",
@@ -98,6 +103,11 @@
       "end": "2026-12-23",
       "start": "2026-12-17",
       "summary": "Reserved - Amy"
+    },
+    "f6cea482-1cb4-4422-9062-ea41cca417e3": {
+      "end": "2026-10-30",
+      "start": "2026-10-26",
+      "summary": "Reserved - hainan"
     }
   }
 }
