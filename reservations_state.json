@@ -7,6 +7,11 @@
     }
   },
   "airbnb_back_unit": {
+    "1418fb94e984-34c378994cde7da8c4c2bdf68e99fdde@airbnb.com": {
+      "end": "2026-11-05",
+      "start": "2026-11-02",
+      "summary": "Reserved"
+    },
     "1418fb94e984-50b125809edb0173dc38a40f4d04d9c6@airbnb.com": {
       "end": "2026-11-09",
       "start": "2026-11-06",
@@ -29,6 +34,11 @@
     }
   },
   "airbnb_front_unit": {
+    "1418fb94e984-3015db67dcf47d5966cc4923c342fa70@airbnb.com": {
+      "end": "2026-12-28",
+      "start": "2026-12-25",
+      "summary": "Reserved"
+    },
     "1418fb94e984-bbc1ee9d24b1c71b5e672b6d93c03544@airbnb.com": {
       "end": "2026-11-20",
       "start": "2026-11-17",
