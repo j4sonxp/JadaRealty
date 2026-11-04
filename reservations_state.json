@@ -53,6 +53,11 @@
       "end": "2027-04-22",
       "start": "2027-04-15",
       "summary": "Reserved"
+    },
+    "1418fb94e984-e9e683956b59b53d87908932b583738f@airbnb.com": {
+      "end": "2027-01-04",
+      "start": "2026-12-31",
+      "summary": "Reserved"
     }
   },
   "airbnb_middle_unit": {
@@ -103,6 +108,11 @@
       "end": "2027-02-21",
       "start": "2027-02-18",
       "summary": "Reserved - Alexander"
+    },
+    "d8144bae-51a9-4e67-ad3f-e806a94a3d3f": {
+      "end": "2026-11-21",
+      "start": "2026-11-09",
+      "summary": "Reserved - Christian Kay"
     }
   },
   "vrbo_front_unit": {
