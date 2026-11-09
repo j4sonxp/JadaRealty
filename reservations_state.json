@@ -41,6 +41,11 @@
       "start": "2026-12-25",
       "summary": "Reserved"
     },
+    "1418fb94e984-3327e62e4e324b311050c90efb5dcd0d@airbnb.com": {
+      "end": "2026-11-13",
+      "start": "2026-11-09",
+      "summary": "Reserved"
+    },
     "1418fb94e984-bbc1ee9d24b1c71b5e672b6d93c03544@airbnb.com": {
       "end": "2026-11-20",
       "start": "2026-11-17",
@@ -53,6 +58,11 @@
     }
   },
   "airbnb_middle_unit": {
+    "1418fb94e984-5d98a71d0b954e1e508a269ecfa98d52@airbnb.com": {
+      "end": "2026-11-21",
+      "start": "2026-11-15",
+      "summary": "Reserved"
+    },
     "1418fb94e984-63ec664d3665a678d194740b8791e084@airbnb.com": {
       "end": "2026-11-28",
       "start": "2026-11-25",
@@ -71,11 +81,6 @@
       "end": "2027-03-18",
       "start": "2027-03-15",
       "summary": "Reserved - Sean"
-    },
-    "37514d60-70d7-42f4-9e24-3aac35b5bcc9": {
-      "end": "2026-11-08",
-      "start": "2026-11-06",
-      "summary": "Reserved - Mariela"
     },
     "f428e315-7a29-47bc-9354-a42220243a16": {
       "end": "2026-11-15",
