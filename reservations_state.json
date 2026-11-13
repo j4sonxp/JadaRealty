@@ -65,6 +65,11 @@
     }
   },
   "vrbo_5_unit": {
+    "b3807f3f-af27-4f6c-8699-14134d2acf10": {
+      "end": "2026-12-26",
+      "start": "2026-12-23",
+      "summary": "Reserved - Rick"
+    },
     "ce1084fa-2cd8-4ba2-9686-285d046d9c6d": {
       "end": "2026-12-01",
       "start": "2026-11-28",
@@ -86,13 +91,6 @@
       "end": "2026-11-15",
       "start": "2026-11-13",
       "summary": "Reserved - Jennifer"
-    }
-  },
-  "vrbo_9_unit": {
-    "4bfbe54f-9dfb-495f-8ca2-25338c9d03a8": {
-      "end": "2027-02-15",
-      "start": "2027-02-12",
-      "summary": "Reserved - Amy"
     }
   },
   "vrbo_back_unit": {
